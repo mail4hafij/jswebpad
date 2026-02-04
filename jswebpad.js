@@ -18,7 +18,7 @@ $(function () {
     options: {
       clearForm: false,                    // Clear form fields after successful submit
       timeout: 30000,                      // Request timeout in milliseconds (30 seconds)
-      showmsg: 'notifications',            // Default HTML element id for responses
+      showmsg: 'notifications',            // Default HTML element id for responses (or 'alert' for error alert dialogs)
       successClass: 'success',             // CSS class for success messages
       errorClass: 'error',                 // CSS class for error messages
       classesToRemove: ['notice', 'hidden'] // Classes to remove before showing messages
@@ -217,11 +217,11 @@ $(function () {
       } else {
         // error message has been sent from the controller
         var opts = $.jsWebPad.options;
+        var elementId = obj.showmsg || opts.showmsg;
 
-        if (obj.showmsg == "alert") {
+        if (elementId == "alert") {
           alert(obj.error);
         } else {
-          var elementId = obj.showmsg || opts.showmsg;
           var $errorTarget = $("#" + elementId);
 
           // Remove configured classes and add error class
