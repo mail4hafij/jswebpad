@@ -49,6 +49,19 @@ Don't use a sledgehammer to crack a nut. If your application is primarily CRUD o
 
 ---
 
+## Features
+
+- 🎯 **Server-Controlled UI** - Your backend dictates all page updates via JSON responses
+- 📝 **Form & GET Handling** - Automatic AJAX form submissions and link requests
+- 🔄 **Dynamic Content** - Update, reload, or replace partial views without page refresh
+- 🎨 **CSS Manipulation** - Add, remove, or toggle classes dynamically
+- 👁️ **Visibility Control** - Show, hide, or remove elements on demand
+- ↗️ **Smart Redirects** - Navigate or load content into containers
+- ⚙️ **Configurable** - Hooks, timeouts, CSS classes, and message containers
+- 🪶 **Lightweight** - Just jQuery + minimal overhead
+
+---
+
 ## Installation
 
 ### 1. Include Dependencies
@@ -253,7 +266,7 @@ public function process(Request $request) {
 
 jsWebPad shows critical errors as alert dialogs when `showmsg` is set to `"alert"`. Use this for important errors that require immediate attention.
 
-### Update Partial View with CSS Classes
+### Update Partial View
 
 **HTML:**
 ```html
@@ -319,7 +332,7 @@ public function sidebar() {
 
 jsWebPad saves the settings, then loads the `/dashboard/sidebar` action and renders it into `#sidebar-container`. The visual update provides feedback to the user.
 
-### Reload Elements with Render
+### Refresh Multiple Partials
 
 **HTML:**
 ```html
@@ -354,25 +367,102 @@ public function recentActivity() {
 
 jsWebPad reloads multiple elements by fetching content from each element's `src` attribute. Each element independently loads its content from a different URL.
 
+### Toggle User Status
+
+While most use cases require only one or two response properties, jsWebPad allows you to combine multiple features in a single JSON response when needed. This example demonstrates using several properties together in one action.
+
+**HTML:**
+```html
+<div id="notifications"></div>
+
+<div id="user-card-123">
+  <h3>John Doe</h3>
+  <span id="status-badge-123" class="badge inactive">Inactive</span>
+  <div id="inactive-notice-123" class="notice">This user is currently inactive.</div>
+  <div id="active-notice-123" class="notice" style="display:none;">This user is active.</div>
+
+  <a href="/users/toggleStatus/123" class="get">Toggle Status</a>
+</div>
+```
+
+**Server:**
+```php
+public function toggleStatus($id) {
+    $user = User::find($id);
+    $user->active = !$user->active;
+    $user->save();
+
+    return response()->json([
+        'success' => 'User status updated!',
+        'toggleClass' => [
+            'status-badge-' . $id => ['active', 'inactive'],
+            'user-card-' . $id => 'highlight'
+        ],
+        'hide' => $user->active ? 'inactive-notice-' . $id : 'active-notice-' . $id,
+        'show' => $user->active ? 'active-notice-' . $id : 'inactive-notice-' . $id
+    ]);
+}
+```
+
+jsWebPad processes the response: shows a success message, toggles CSS classes on the badge and card, and swaps visibility of the status notices—all without a page refresh.
+
+---
+
+## JSON Response Reference
+
+Your server returns JSON responses that control what jsWebPad does on the page. Here are all available properties:
+
+### Messages
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `success` | string | Success message to display | `"success": "User created!"` |
+| `error` | string | Error message to display | `"error": "Email is required!"` |
+| `showmsg` | string | Element ID where message appears (default: `'notifications'`) or `'alert'` for alert dialog | `"showmsg": "custom-alerts"` or `"showmsg": "alert"` |
+
+### Content Updates
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `html` | string | HTML content to insert into element specified by `showmsg` | `"html": "<div>Updated content</div>"` |
+| `url` | string | Redirect to URL, or `"current"` to reload page | `"url": "/dashboard"` |
+| `container` | string | Element ID to load `url` content into (prevents redirect) | `"container": "sidebar"` |
+| `render` | string or array | Element ID(s) to reload from their `src` attribute | `"render": ["stats", "activity"]` |
+
+### Visibility Control
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `show` | string or array | Element ID(s) to show | `"show": "success-banner"` |
+| `hide` | string or array | Element ID(s) to hide | `"hide": ["row-123", "row-456"]` |
+| `remove` | string or array | Element ID(s) to empty/clear content | `"remove": "temp-data"` |
+
+### CSS Class Manipulation
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `addClass` | object | Add class(es) to elements. Key = element ID, Value = class name(s) | `"addClass": {"card": "highlight"}` |
+| `removeClass` | object | Remove class(es) from elements | `"removeClass": {"card": ["loading", "error"]}` |
+| `toggleClass` | object | Toggle class(es) on elements | `"toggleClass": {"badge": ["active", "inactive"]}` |
+
+### Example Combining Multiple Properties
+
+```json
+{
+  "success": "Profile updated successfully!",
+  "html": "<div class='profile'>...</div>",
+  "showmsg": "profile-container",
+  "addClass": {
+    "profile-container": "highlight"
+  },
+  "hide": "edit-form",
+  "show": "view-mode"
+}
+```
+
 ---
 
 ## How jsWebPad Works
-
-### Perfect Match with MVC Architecture
-
-jsWebPad is designed to work seamlessly with **MVC-driven backends** (Laravel, ASP.NET MVC, Rails, Django, etc.). Here's why they're a perfect match:
-
-**MVC's Component-Based Structure:**
-- MVC frameworks organize code into **actions** (controller methods)
-- Actions render **partial views/elements** (reusable UI components)
-- Elements can be nested and composed together
-- Each action has a specific URL endpoint
-
-**jsWebPad Leverages This:**
-- Each action can be called via AJAX and return JSON
-- JSON responses tell jsWebPad what to do with the page
-- Elements can be **reloaded independently** without full page refresh
-- Server remains in **complete control** of UI logic
 
 ### The Server-Controlled Approach
 
@@ -390,52 +480,11 @@ User Action → AJAX Request → Server Action → JSON Response → jsWebPad Up
 5. jsWebPad shows success message and hides the user row
 6. **No client-side logic needed** - server told jsWebPad exactly what to do
 
-### Working with Partials and Elements
-
-MVC frameworks excel at rendering partial views/elements. jsWebPad makes them dynamic:
-
-**Scenario: Update a user profile section**
-
-**Server-Side (MVC Action):**
-```php
-// Controller action
-public function updateProfile() {
-    // Process update...
-
-    // Render updated profile element
-    $html = $this->renderElement('profile_card', ['user' => $user]);
-
-    return json_encode([
-        'success' => 'Profile updated!',
-        'html' => $html,
-        'showmsg' => 'profile-container'
-    ]);
-}
-```
-
-**Client-Side (HTML):**
-```html
-<div id="profile-container">
-  <!-- Current profile card will be replaced -->
-</div>
-
-<form action="/profile/update" method="post">
-  <input name="name" value="John">
-  <button name="jsonsubmit">Update</button>
-</form>
-```
-
-**What Happens:**
-- User submits form
-- Server processes and re-renders the profile element
-- jsWebPad replaces `#profile-container` with new HTML
-- **No page reload, no React components, just clean MVC**
-
 ### Why This Works So Well
 
 **1. Natural MVC Flow**
 - You're already writing actions and partials
-- Just return JSON instead of full page HTML
+- Actions return JSON responses (for control) or partial HTML (for content)
 - Elements become dynamic without rewriting as components
 
 **2. Server Stays in Control**
