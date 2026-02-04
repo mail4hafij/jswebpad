@@ -107,8 +107,8 @@ $.jsWebPad.options.clearForm = true;
 // Change timeout to 5 seconds
 $.jsWebPad.options.timeout = 5000;
 
-// Use custom HTML element id for responses
-$.jsWebPad.options.showmsg = 'alerts';
+// Show all errors as alert dialogs by default
+$.jsWebPad.options.showmsg = 'alert';
 
 // Form submission hook (checks if button has 'confirm' class)
 $.jsWebPad.beforeSubmit = function($form, $button) {
