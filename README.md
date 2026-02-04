@@ -93,7 +93,7 @@ jsWebPad automatically shows/hides this element during AJAX requests.
 ```javascript
 $.jsWebPad.options.clearForm = false;                    // Don't clear forms by default
 $.jsWebPad.options.timeout = 30000;                      // 30 seconds timeout
-$.jsWebPad.options.showmsg = 'notifications';            // Default HTML element id for responses
+$.jsWebPad.options.showmsg = 'notifications';            // Default HTML element id for responses (or 'alert' for error alert dialogs)
 $.jsWebPad.options.successClass = 'success';             // CSS class for success messages
 $.jsWebPad.options.errorClass = 'error';                 // CSS class for error messages
 $.jsWebPad.options.classesToRemove = ['notice', 'hidden']; // Classes to remove before showing messages
